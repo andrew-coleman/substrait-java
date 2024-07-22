@@ -107,4 +107,9 @@ public abstract class AbstractRelVisitor<OUTPUT, EXCEPTION extends Exception>
   public OUTPUT visit(ConsistentPartitionWindow consistentPartitionWindow) throws EXCEPTION {
     return visitFallback(consistentPartitionWindow);
   }
+
+  @Override
+  public OUTPUT visit(Write write) throws EXCEPTION {
+    return visitFallback(write);
+  }
 }

@@ -366,6 +366,17 @@ public class RelCopyOnWriteVisitor<EXCEPTION extends Exception>
             .build());
   }
 
+  @Override
+  public Optional<Rel> visit(Write write) throws EXCEPTION {
+    var input = write.getInput().accept(this);
+    return Optional.of(
+        Write.builder()
+            .from(write)
+            .input(input.orElse((write.getInput())))
+            .outputMode(write.getOutputMode())
+            .build());
+  }
+
   protected Optional<ConsistentPartitionWindow.WindowRelFunctionInvocation> visitWindowRelFunction(
       ConsistentPartitionWindow.WindowRelFunctionInvocation windowRelFunctionInvocation)
       throws EXCEPTION {

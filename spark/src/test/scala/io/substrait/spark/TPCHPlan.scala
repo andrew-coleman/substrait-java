@@ -16,6 +16,7 @@
  */
 package io.substrait.spark
 
+import io.substrait.spark.logical.{ToLogicalPlan, ToSubstraitRel}
 import org.apache.spark.sql.TPCHBase
 
 class TPCHPlan extends TPCHBase with SubstraitPlanTestBase {
@@ -168,6 +169,11 @@ class TPCHPlan extends TPCHBase with SubstraitPlanTestBase {
     assertSqlSubstraitRelRoundTrip(
       "select sum(l_discount) from lineitem group by grouping sets " +
         "((l_orderkey, L_COMMITDATE), (l_orderkey, L_COMMITDATE, l_linestatus), l_shipdate, ())")
+  }
+
+  test("simpleInsert") {
+    assertSqlSubstraitRelRoundTrip(
+      "insert into region values(1, 'SOTON', 'Southampton')")
   }
 
   test("tpch_q1_variant") {

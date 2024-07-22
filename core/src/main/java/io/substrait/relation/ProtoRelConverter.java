@@ -1,5 +1,6 @@
 package io.substrait.relation;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.substrait.expression.Expression;
 import io.substrait.expression.FunctionArg;
 import io.substrait.expression.ImmutableExpression;
@@ -23,6 +24,7 @@ import io.substrait.proto.ProjectRel;
 import io.substrait.proto.ReadRel;
 import io.substrait.proto.SetRel;
 import io.substrait.proto.SortRel;
+import io.substrait.proto.WriteRel;
 import io.substrait.relation.extensions.EmptyDetail;
 import io.substrait.relation.extensions.EmptyOptimization;
 import io.substrait.relation.files.FileOrFiles;
@@ -111,6 +113,9 @@ public class ProtoRelConverter {
       case WINDOW -> {
         return newConsistentPartitionWindow(rel.getWindow());
       }
+      case WRITE -> {
+        return newWrite(rel.getWrite());
+      }
       default -> {
         throw new UnsupportedOperationException("Unsupported RelTypeCase of " + relType);
       }
@@ -136,6 +141,28 @@ public class ProtoRelConverter {
     }
   }
 
+  private Rel newWrite(WriteRel rel) {
+    var input = from(rel.getInput());
+    var builder =
+        Write.builder()
+            .input(input)
+            .tableSchema(newNamedStruct(rel.getTableSchema()))
+            .outputMode(rel.getOutput())
+            .operation(rel.getOp());
+    if (rel.hasExtensionTable()) {
+      try {
+        builder.file(
+            newFileOrFiles(
+                rel.getExtensionTable().getDetail().unpack(ReadRel.LocalFiles.FileOrFiles.class)));
+      } catch (InvalidProtocolBufferException ex) {
+      }
+    }
+    builder
+        .commonExtension(optionalAdvancedExtension(rel.getCommon()))
+        .remap(optionalRelmap(rel.getCommon()));
+    return builder.build();
+  }
+
   private Filter newFilter(FilterRel rel) {
     var input = from(rel.getInput());
     var builder =
@@ -155,7 +182,10 @@ public class ProtoRelConverter {
   }
 
   private NamedStruct newNamedStruct(ReadRel rel) {
-    var namedStruct = rel.getBaseSchema();
+    return newNamedStruct(rel.getBaseSchema());
+  }
+
+  private NamedStruct newNamedStruct(io.substrait.proto.NamedStruct namedStruct) {
     var struct = namedStruct.getStruct();
     return ImmutableNamedStruct.builder()
         .names(namedStruct.getNamesList())

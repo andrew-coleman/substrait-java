@@ -1,5 +1,6 @@
 package io.substrait.relation;
 
+import com.google.protobuf.Any;
 import io.substrait.expression.Expression;
 import io.substrait.expression.FieldReference;
 import io.substrait.expression.FunctionArg;
@@ -12,6 +13,7 @@ import io.substrait.proto.ConsistentPartitionWindowRel;
 import io.substrait.proto.CrossRel;
 import io.substrait.proto.ExtensionLeafRel;
 import io.substrait.proto.ExtensionMultiRel;
+import io.substrait.proto.ExtensionObject;
 import io.substrait.proto.ExtensionSingleRel;
 import io.substrait.proto.FetchRel;
 import io.substrait.proto.FilterRel;
@@ -26,6 +28,7 @@ import io.substrait.proto.RelCommon;
 import io.substrait.proto.SetRel;
 import io.substrait.proto.SortField;
 import io.substrait.proto.SortRel;
+import io.substrait.proto.WriteRel;
 import io.substrait.relation.files.FileOrFiles;
 import io.substrait.relation.physical.HashJoin;
 import io.substrait.relation.physical.MergeJoin;
@@ -330,6 +333,26 @@ public class RelProtoConverter implements RelVisitor<Rel, RuntimeException> {
         .ifPresent(ae -> builder.setAdvancedExtension(ae.toProto()));
 
     return Rel.newBuilder().setWindow(builder).build();
+  }
+
+  @Override
+  public Rel visit(Write write) throws RuntimeException {
+    var builder =
+        WriteRel.newBuilder()
+            .setCommon(common(write))
+            .setInput(toProto(write.getInput()))
+            .setTableSchema(write.getTableSchema().toProto(typeProtoConverter))
+            .setOp(write.getOperation())
+            .setOutput(write.getOutputMode());
+
+    write
+        .getFile()
+        .ifPresent(
+            file ->
+                builder.setExtensionTable(
+                    ExtensionObject.newBuilder().setDetail(Any.pack(file.toProto())).build()));
+
+    return Rel.newBuilder().setWrite(builder).build();
   }
 
   private List<ConsistentPartitionWindowRel.WindowRelFunction> toProtoWindowRelFunctions(

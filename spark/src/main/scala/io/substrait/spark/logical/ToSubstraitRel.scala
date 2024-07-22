@@ -18,29 +18,29 @@ package io.substrait.spark.logical
 
 import io.substrait.spark.{SparkExtension, ToSubstraitType}
 import io.substrait.spark.expression._
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, InsertIntoHadoopFsRelationCommand, LogicalRelation, V1WriteCommand}
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 import ToSubstraitType.toNamedStruct
-
+import io.substrait.`type`.{NamedStruct, Type}
 import io.substrait.{proto, relation}
 import io.substrait.debug.TreePrinter
-import io.substrait.expression.{Expression => SExpression, ExpressionCreator}
+import io.substrait.expression.{ExpressionCreator, Expression => SExpression}
 import io.substrait.extension.ExtensionCollector
 import io.substrait.plan.{ImmutablePlan, ImmutableRoot, Plan}
+import io.substrait.proto.WriteRel.{OutputMode, WriteOp}
 import io.substrait.relation.RelProtoConverter
-import io.substrait.relation.files.{FileFormat, ImmutableFileOrFiles}
+import io.substrait.relation.files.{FileFormat, ImmutableFileFormat, ImmutableFileOrFiles}
 import io.substrait.relation.files.FileOrFiles.PathType
+import org.apache.spark.sql.SaveMode
 
 import java.util.Collections
-
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -52,6 +52,7 @@ class ToSubstraitRel extends AbstractLogicalPlanVisitor with Logging {
   private val TRUE = ExpressionCreator.bool(false, true)
 
   override def default(p: LogicalPlan): relation.Rel = p match {
+    case c: CommandResult => convertCommandResult(c)
     case p: LeafNode => convertReadOperator(p)
     case s: SubqueryAlias => visit(s.child)
     case other => t(other)
@@ -353,6 +354,43 @@ class ToSubstraitRel extends AbstractLogicalPlanVisitor with Logging {
           s"******* Unable to convert the plan to a substrait NamedScan: $plan")
     }
   }
+
+  private def convertCommandResult(command: CommandResult): relation.Write = {
+    command.commandLogicalPlan match {
+      case i: InsertIntoHadoopFsRelationCommand =>
+        val children = i.child.output map(op => ToSubstraitType.apply(op.dataType, op.nullable))
+        val creator = Type.withNullability(true)
+        val struct = creator.struct(children.asJava)
+        val schema = NamedStruct.of(i.outputColumnNames.asJava, struct)
+
+        val op = i.mode match {
+          case SaveMode.Append => WriteOp.WRITE_OP_INSERT
+          case SaveMode.Overwrite => WriteOp.WRITE_OP_UPDATE
+        }
+
+        relation.Write.builder()
+          .input(visit(i.child))
+          .operation(op)
+          .outputMode(OutputMode.OUTPUT_MODE_UNSPECIFIED)
+          .tableSchema(schema)
+          .file(
+            ImmutableFileOrFiles
+              .builder()
+              .fileFormat(ImmutableFileFormat.ParquetReadOptions.builder.build)
+              .partitionIndex(0)
+              .start(0)
+              .length(0)
+              .path(i.outputPath.toString)
+              .pathType(PathType.URI_FILE)
+              .build()
+          )
+          .build()
+      case _ =>
+        throw new UnsupportedOperationException(
+          s"******* Unable to convert the plan to a substrait command result: $command")
+    }
+  }
+
   def convert(p: LogicalPlan): Plan = {
     val rel = visit(p)
     ImmutablePlan.builder

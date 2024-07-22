@@ -18,8 +18,7 @@ package io.substrait.spark.logical
 
 import io.substrait.spark.{DefaultRelVisitor, SparkExtension, ToSubstraitType}
 import io.substrait.spark.expression._
-
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.{MultiInstanceRelation, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, AggregateFunction}
@@ -27,17 +26,18 @@ import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftAnti, LeftOute
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, InMemoryFileIndex, InsertIntoHadoopFsRelationCommand, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.csv.CSVFileFormat
 import org.apache.spark.sql.types.{DataTypes, IntegerType, StructType}
-
 import io.substrait.`type`.{StringTypeVisitor, Type}
 import io.substrait.{expression => exp}
 import io.substrait.expression.{Expression => SExpression}
 import io.substrait.plan.Plan
+import io.substrait.proto.WriteRel.WriteOp
 import io.substrait.relation
-import io.substrait.relation.LocalFiles
+import io.substrait.relation.{LocalFiles, VirtualTableScan, Write}
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.ArrayBuffer
@@ -199,6 +199,49 @@ class ToLogicalPlan(spark: SparkSession) extends DefaultRelVisitor[LogicalPlan] 
       val condition = filter.getCondition.accept(expressionConverter)
       Filter(condition, child)
     }
+  }
+
+  override def visit(write: Write): LogicalPlan = {
+    val child = write.getInput.accept(this)
+    val schema = ToSubstraitType.toStructType(write.getTableSchema)
+    val output = schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
+    val file = write.getFile.get()
+    val mode = write.getOperation match {
+      case WriteOp.WRITE_OP_INSERT => SaveMode.Append
+      case WriteOp.WRITE_OP_UPDATE => SaveMode.Overwrite
+    }
+
+    withChild(child) {
+      CommandResult(
+        output = output,
+        commandLogicalPlan = InsertIntoHadoopFsRelationCommand(
+          outputPath = new Path(file.getPath.get()),
+          staticPartitions = Map(),
+          ifPartitionNotExists = false,
+          partitionColumns = Seq.empty,
+          bucketSpec = None,
+          fileFormat = new ParquetFileFormat(),
+          options = Map(),
+          query = child,
+          mode = mode,
+          catalogTable = None,
+          fileIndex = None,
+          outputColumnNames = write.getTableSchema.names.asScala
+        ),
+        commandPhysicalPlan = null,
+        rows = Seq.empty
+      )
+    }
+  }
+
+  override def visit(virtualTableScan: VirtualTableScan): LogicalPlan = {
+    LocalRelation.fromExternalRows(
+      ToSubstraitType.toAttribute(virtualTableScan.getInitialSchema),
+      virtualTableScan.getRows.asScala map(r => {
+        val values = r.fields().asScala.map(f => f.accept(expressionConverter)).map(f => f.eval())
+        Row.fromSeq(values)
+      })
+    )
   }
 
   override def visit(emptyScan: relation.EmptyScan): LogicalPlan = {
