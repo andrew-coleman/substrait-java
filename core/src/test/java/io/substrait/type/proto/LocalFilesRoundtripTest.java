@@ -79,6 +79,7 @@ public class LocalFilesRoundtripTest extends TestBase {
           ImmutableFileFormat.Extension.builder()
               .extension(com.google.protobuf.Any.newBuilder().build())
               .build());
+      case TEXT -> builder; // TODO implementation
       case FILEFORMAT_NOT_SET -> builder;
     };
   }

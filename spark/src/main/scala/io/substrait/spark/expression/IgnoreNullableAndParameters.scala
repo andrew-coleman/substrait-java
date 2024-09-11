@@ -133,4 +133,8 @@ class IgnoreNullableAndParameters(val typeToMatch: ParameterizedType)
   @throws[RuntimeException]
   override def visit(precisionTimestampTZ: Type.PrecisionTimestampTZ): Boolean =
     typeToMatch.isInstanceOf[Type.PrecisionTimestampTZ]
+
+  @throws[RuntimeException]
+  override def visit(intervalDay: ParameterizedType.IntervalDay): Boolean =
+    typeToMatch.isInstanceOf[ParameterizedType.IntervalDay]
 }

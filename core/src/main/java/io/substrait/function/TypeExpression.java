@@ -85,6 +85,21 @@ public interface TypeExpression {
   }
 
   @Value.Immutable
+  abstract static class IntervalDay extends BaseTypeExpression implements NullableType {
+
+    public abstract TypeExpression precision();
+
+    @Override
+    <R, E extends Throwable> R acceptE(final TypeExpressionVisitor<R, E> visitor) throws E {
+      return visitor.visit(this);
+    }
+
+    public static ImmutableTypeExpression.IntervalDay.Builder builder() {
+      return ImmutableTypeExpression.IntervalDay.builder();
+    }
+  }
+
+  @Value.Immutable
   abstract static class PrecisionTimestamp extends BaseTypeExpression implements NullableType {
 
     public abstract TypeExpression precision();

@@ -238,7 +238,9 @@ public class ExpressionRexConverter extends AbstractExpressionVisitor<RexNode, R
         // microseconds version: new BigDecimal(expr.days() * MICROS_IN_DAY + expr.seconds() *
         // 100000L + expr.microseconds()), DAY_SECOND_INTERVAL);
         new BigDecimal(
-            (expr.days() * MICROS_IN_DAY + expr.seconds() * 1_000_000L + expr.microseconds())
+            (expr.days() * MICROS_IN_DAY
+                    + expr.seconds() * 1_000_000L
+                    + expr.subseconds() * Math.pow(10, 6 - expr.precision()))
                 / 1000L),
         DAY_SECOND_INTERVAL);
   }

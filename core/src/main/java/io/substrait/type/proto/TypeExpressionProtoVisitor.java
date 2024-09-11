@@ -122,6 +122,11 @@ public class TypeExpressionProtoVisitor
   }
 
   @Override
+  public DerivationExpression visit(ParameterizedType.IntervalDay expr) {
+    return typeContainer(expr).intervalDay(expr.precision().accept(this));
+  }
+
+  @Override
   public DerivationExpression visit(ParameterizedType.PrecisionTimestamp expr) {
     return typeContainer(expr).precisionTimestamp(expr.precision().accept(this));
   }
@@ -246,6 +251,15 @@ public class TypeExpressionProtoVisitor
     }
 
     @Override
+    public DerivationExpression intervalDay(DerivationExpression precision) {
+      return wrap(
+          DerivationExpression.ExpressionIntervalDay.newBuilder()
+              .setPrecision(precision)
+              .setNullability(nullability)
+              .build());
+    }
+
+    @Override
     public DerivationExpression precisionTimestamp(DerivationExpression precision) {
       return wrap(
           DerivationExpression.ExpressionPrecisionTimestamp.newBuilder()
@@ -329,8 +343,10 @@ public class TypeExpressionProtoVisitor
         return bldr.setTimestampTz(t).build();
       } else if (o instanceof Type.IntervalYear t) {
         return bldr.setIntervalYear(t).build();
-      } else if (o instanceof Type.IntervalDay t) {
+      } else if (o instanceof DerivationExpression.ExpressionIntervalDay t) {
         return bldr.setIntervalDay(t).build();
+      } else if (o instanceof DerivationExpression.ExpressionIntervalCompound t) {
+        return bldr.setIntervalCompound(t).build();
       } else if (o instanceof DerivationExpression.ExpressionFixedChar t) {
         return bldr.setFixedChar(t).build();
       } else if (o instanceof DerivationExpression.ExpressionVarChar t) {

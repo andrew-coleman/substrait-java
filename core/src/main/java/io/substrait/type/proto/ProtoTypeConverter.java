@@ -4,8 +4,9 @@ import io.substrait.extension.ExtensionLookup;
 import io.substrait.extension.SimpleExtension;
 import io.substrait.type.Type;
 import io.substrait.type.TypeCreator;
+import java.util.stream.Collectors;
 
-/** Converts from {@link io.substrait.proto.Type} to {@link io.substrait.type.Type} */
+/** Converts from {@link io.substrait.proto.Type} to {@link Type} */
 public class ProtoTypeConverter {
 
   private final ExtensionLookup lookup;
@@ -32,7 +33,9 @@ public class ProtoTypeConverter {
       case DATE -> n(type.getDate().getNullability()).DATE;
       case TIME -> n(type.getTime().getNullability()).TIME;
       case INTERVAL_YEAR -> n(type.getIntervalYear().getNullability()).INTERVAL_YEAR;
-      case INTERVAL_DAY -> n(type.getIntervalDay().getNullability()).INTERVAL_DAY;
+      case INTERVAL_DAY -> n(type.getIntervalDay().getNullability())
+          .intervalDay(type.getIntervalDay().getPrecision());
+      case INTERVAL_COMPOUND -> null; // TODO implementation
       case TIMESTAMP_TZ -> n(type.getTimestampTz().getNullability()).TIMESTAMP_TZ;
       case UUID -> n(type.getUuid().getNullability()).UUID;
       case FIXED_CHAR -> n(type.getFixedChar().getNullability())
@@ -50,7 +53,7 @@ public class ProtoTypeConverter {
           .struct(
               type.getStruct().getTypesList().stream()
                   .map(this::from)
-                  .collect(java.util.stream.Collectors.toList()));
+                  .collect(Collectors.toList()));
       case LIST -> fromList(type.getList());
       case MAP -> n(type.getMap().getNullability())
           .map(from(type.getMap().getKey()), from(type.getMap().getValue()));

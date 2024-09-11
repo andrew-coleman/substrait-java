@@ -55,6 +55,12 @@ public class ParameterizedProtoConverter
   }
 
   @Override
+  public ParameterizedType visit(io.substrait.function.ParameterizedType.IntervalDay expr)
+      throws RuntimeException {
+    return typeContainer(expr).intervalDay(i(expr.precision()));
+  }
+
+  @Override
   public ParameterizedType visit(io.substrait.function.ParameterizedType.PrecisionTimestamp expr)
       throws RuntimeException {
     return typeContainer(expr).precisionTimestamp(i(expr.precision()));
@@ -187,6 +193,15 @@ public class ParameterizedProtoConverter
     }
 
     @Override
+    public ParameterizedType intervalDay(ParameterizedType.IntegerOption precision) {
+      return wrap(
+          ParameterizedType.ParameterizedIntervalDay.newBuilder()
+              .setPrecision(precision)
+              .setNullability(nullability)
+              .build());
+    }
+
+    @Override
     public ParameterizedType precisionTimestamp(ParameterizedType.IntegerOption precision) {
       return wrap(
           ParameterizedType.ParameterizedPrecisionTimestamp.newBuilder()
@@ -266,8 +281,10 @@ public class ParameterizedProtoConverter
         return bldr.setTimestampTz(t).build();
       } else if (o instanceof Type.IntervalYear t) {
         return bldr.setIntervalYear(t).build();
-      } else if (o instanceof Type.IntervalDay t) {
+      } else if (o instanceof ParameterizedType.ParameterizedIntervalDay t) {
         return bldr.setIntervalDay(t).build();
+      } else if (o instanceof ParameterizedType.ParameterizedIntervalCompound t) {
+        return bldr.setIntervalCompound(t).build();
       } else if (o instanceof ParameterizedType.ParameterizedFixedChar t) {
         return bldr.setFixedChar(t).build();
       } else if (o instanceof ParameterizedType.ParameterizedVarChar t) {

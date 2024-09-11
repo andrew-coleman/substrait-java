@@ -158,7 +158,6 @@ scalarType
   | TimestampTZ #timestampTz
   | Date #date
   | Time #time
-  | IntervalDay #intervalDay
   | IntervalYear #intervalYear
   | UUID #uuid
   | UserDefined Identifier #userDefined
@@ -171,6 +170,7 @@ parameterizedType
   | Decimal isnull='?'? Lt precision=numericParameter Comma scale=numericParameter Gt #decimal
   | PrecisionTimestamp isnull='?'? Lt precision=numericParameter Gt #precisionTimestamp
   | PrecisionTimestampTZ isnull='?'? Lt precision=numericParameter Gt #precisionTimestampTZ
+  | IntervalDay isnull='?'? Lt precision=numericParameter Gt #intervalDay
   | Struct isnull='?'? Lt expr (Comma expr)* Gt #struct
   | NStruct isnull='?'? Lt Identifier expr (Comma Identifier expr)* Gt #nStruct
   | List isnull='?'? Lt expr Gt #list

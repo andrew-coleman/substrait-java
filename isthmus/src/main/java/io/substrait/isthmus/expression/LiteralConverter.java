@@ -182,7 +182,7 @@ public class LiteralConverter {
         var totalMicroseconds = adjustedLength - days * MICROS_IN_DAY;
         var seconds = totalMicroseconds / 1_000_000;
         var microseconds = totalMicroseconds - 1_000_000 * seconds;
-        yield intervalDay(n, (int) days, (int) seconds, (int) microseconds);
+        yield intervalDay(n, (int) days, (int) seconds, (int) microseconds, 6);
       }
 
       case ROW -> {

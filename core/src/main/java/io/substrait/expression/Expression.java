@@ -333,10 +333,12 @@ public interface Expression extends FunctionArg {
 
     public abstract int seconds();
 
-    public abstract int microseconds();
+    public abstract long subseconds();
+
+    public abstract int precision();
 
     public Type getType() {
-      return Type.withNullability(nullable()).INTERVAL_DAY;
+      return Type.withNullability(nullable()).intervalDay(precision());
     }
 
     public static ImmutableExpression.IntervalDayLiteral.Builder builder() {

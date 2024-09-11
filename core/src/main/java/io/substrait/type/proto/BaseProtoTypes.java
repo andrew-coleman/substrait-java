@@ -81,6 +81,10 @@ abstract class BaseProtoTypes<T, I> {
     return decimal(i(scale), precision);
   }
 
+  public final T intervalDay(int precision) {
+    return intervalDay(i(precision));
+  }
+
   public final T precisionTimestamp(int precision) {
     return precisionTimestamp(i(precision));
   }
@@ -98,6 +102,8 @@ abstract class BaseProtoTypes<T, I> {
   public abstract T fixedBinary(I len);
 
   public abstract T decimal(I scale, I precision);
+
+  public abstract T intervalDay(I precision);
 
   public abstract T precisionTimestamp(I precision);
 

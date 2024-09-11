@@ -28,7 +28,7 @@ public class TestTypeRoundtrip {
     t(creator(n).TIMESTAMP);
     t(creator(n).TIMESTAMP_TZ);
     t(creator(n).INTERVAL_YEAR);
-    t(creator(n).INTERVAL_DAY);
+    t(creator(n).intervalDay(6));
     t(creator(n).UUID);
     t(creator(n).fixedChar(25));
     t(creator(n).varChar(35));

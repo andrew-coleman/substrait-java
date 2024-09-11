@@ -96,7 +96,7 @@ abstract class BaseProtoConverter<T, I>
 
   @Override
   public final T visit(final Type.IntervalDay expr) {
-    return typeContainer(expr).INTERVAL_DAY;
+    return typeContainer(expr).intervalDay(expr.precision());
   }
 
   @Override

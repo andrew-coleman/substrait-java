@@ -166,6 +166,11 @@ public class ToTypeString
   }
 
   @Override
+  public String visit(ParameterizedType.IntervalDay expr) throws RuntimeException {
+    return "iday";
+  }
+
+  @Override
   public String visit(ParameterizedType.PrecisionTimestamp expr) throws RuntimeException {
     return "pts";
   }

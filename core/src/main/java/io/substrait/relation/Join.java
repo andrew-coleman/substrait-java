@@ -23,8 +23,8 @@ public abstract class Join extends BiRel implements HasExtension {
     OUTER(JoinRel.JoinType.JOIN_TYPE_OUTER),
     LEFT(JoinRel.JoinType.JOIN_TYPE_LEFT),
     RIGHT(JoinRel.JoinType.JOIN_TYPE_RIGHT),
-    SEMI(JoinRel.JoinType.JOIN_TYPE_SEMI),
-    ANTI(JoinRel.JoinType.JOIN_TYPE_ANTI);
+    SEMI(JoinRel.JoinType.JOIN_TYPE_LEFT_SEMI),
+    ANTI(JoinRel.JoinType.JOIN_TYPE_LEFT_ANTI);
 
     private JoinRel.JoinType proto;
 

@@ -152,11 +152,6 @@ public class ParseToPojo {
     }
 
     @Override
-    public Type visitIntervalDay(final SubstraitTypeParser.IntervalDayContext ctx) {
-      return withNull(ctx).INTERVAL_DAY;
-    }
-
-    @Override
     public Type visitIntervalYear(final SubstraitTypeParser.IntervalYearContext ctx) {
       return withNull(ctx).INTERVAL_YEAR;
     }
@@ -233,8 +228,29 @@ public class ParseToPojo {
         return withNullP(nullable).decimalE((String) precision, (String) scale);
       }
 
+      if (precision instanceof String && scale instanceof Integer) {
+        checkParameterizedOrExpression();
+        return withNullP(nullable).decimalE((String) precision, String.valueOf(scale));
+      }
+
       checkExpression();
       return withNullE(nullable).decimalE(ctx.precision.accept(this), ctx.scale.accept(this));
+    }
+
+    @Override
+    public TypeExpression visitIntervalDay(final SubstraitTypeParser.IntervalDayContext ctx) {
+      boolean nullable = ctx.isnull != null;
+      Object precision = i(ctx.precision);
+      if (precision instanceof Integer p) {
+        return withNull(nullable).intervalDay(p);
+      }
+      if (precision instanceof String s) {
+        checkParameterizedOrExpression();
+        return withNullP(nullable).intervalDayE(s);
+      }
+
+      checkExpression();
+      return withNullE(nullable).intervalDayE(ctx.precision.accept(this));
     }
 
     @Override

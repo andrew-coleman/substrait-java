@@ -202,6 +202,8 @@ public interface Type extends TypeExpression, ParameterizedType, NullableType, F
 
   @Value.Immutable
   abstract static class IntervalDay implements Type {
+    public abstract int precision();
+
     public static ImmutableType.IntervalDay.Builder builder() {
       return ImmutableType.IntervalDay.builder();
     }

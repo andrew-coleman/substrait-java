@@ -22,7 +22,6 @@ public class TypeCreator {
   public final Type TIMESTAMP_TZ;
   public final Type DATE;
   public final Type TIME;
-  public final Type INTERVAL_DAY;
   public final Type INTERVAL_YEAR;
   public final Type UUID;
 
@@ -41,7 +40,6 @@ public class TypeCreator {
     TIMESTAMP_TZ = Type.TimestampTZ.builder().nullable(nullable).build();
     DATE = Type.Date.builder().nullable(nullable).build();
     TIME = Type.Time.builder().nullable(nullable).build();
-    INTERVAL_DAY = Type.IntervalDay.builder().nullable(nullable).build();
     INTERVAL_YEAR = Type.IntervalYear.builder().nullable(nullable).build();
     UUID = Type.UUID.builder().nullable(nullable).build();
   }
@@ -64,6 +62,10 @@ public class TypeCreator {
 
   public final Type.Struct struct(Type... types) {
     return Type.Struct.builder().nullable(nullable).addFields(types).build();
+  }
+
+  public final Type intervalDay(int precision) {
+    return Type.IntervalDay.builder().nullable(nullable).precision(precision).build();
   }
 
   public final Type precisionTimestamp(int precision) {

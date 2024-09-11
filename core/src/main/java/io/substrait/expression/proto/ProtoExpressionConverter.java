@@ -340,11 +340,19 @@ public class ProtoExpressionConverter {
           literal.getNullable(),
           literal.getIntervalYearToMonth().getYears(),
           literal.getIntervalYearToMonth().getMonths());
-      case INTERVAL_DAY_TO_SECOND -> ExpressionCreator.intervalDay(
-          literal.getNullable(),
-          literal.getIntervalDayToSecond().getDays(),
-          literal.getIntervalDayToSecond().getSeconds(),
-          literal.getIntervalDayToSecond().getMicroseconds());
+      case INTERVAL_DAY_TO_SECOND -> literal.getIntervalDayToSecond().hasPrecision()
+          ? ExpressionCreator.intervalDay(
+              literal.getNullable(),
+              literal.getIntervalDayToSecond().getDays(),
+              literal.getIntervalDayToSecond().getSeconds(),
+              literal.getIntervalDayToSecond().getSubseconds(),
+              literal.getIntervalDayToSecond().getPrecision())
+          : ExpressionCreator.intervalDay(
+              literal.getNullable(),
+              literal.getIntervalDayToSecond().getDays(),
+              literal.getIntervalDayToSecond().getSeconds(),
+              literal.getIntervalDayToSecond().getMicroseconds(),
+              6);
       case FIXED_CHAR -> ExpressionCreator.fixedChar(literal.getNullable(), literal.getFixedChar());
       case VAR_CHAR -> ExpressionCreator.varChar(
           literal.getNullable(), literal.getVarChar().getValue(), literal.getVarChar().getLength());
