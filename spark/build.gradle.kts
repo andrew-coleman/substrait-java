@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 plugins {
   `maven-publish`
   id("java")
@@ -103,6 +106,7 @@ dependencies {
   testImplementation("org.apache.spark:spark-core_2.12:${SPARK_VERSION}:tests")
   testImplementation("org.apache.spark:spark-sql_2.12:${SPARK_VERSION}:tests")
   testImplementation("org.apache.spark:spark-catalyst_2.12:${SPARK_VERSION}:tests")
+  testImplementation("com.teradata.tpcds:tpcds:1.2")
 }
 
 spotless {
@@ -115,6 +119,19 @@ spotless {
 tasks {
   test {
     dependsOn(":core:shadowJar")
-    useJUnitPlatform { includeEngines("scalatest") }
+    useJUnitPlatform {
+      includeEngines("scalatest")
+      testLogging {
+        events(
+          TestLogEvent.PASSED,
+          TestLogEvent.SKIPPED,
+          TestLogEvent.FAILED,
+          TestLogEvent.STANDARD_ERROR,
+          TestLogEvent.STANDARD_OUT
+        )
+        showStackTraces = true
+        exceptionFormat = TestExceptionFormat.FULL
+      }
+    }
   }
 }
